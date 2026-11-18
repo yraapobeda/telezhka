@@ -12,6 +12,15 @@ from .config import Location
 log = logging.getLogger(__name__)
 
 
+def _as_dict(v) -> dict:
+    """3.11 отдаёт settings объектом, старые версии — JSON-строкой."""
+    if isinstance(v, dict):
+        return v
+    if isinstance(v, (str, bytes)) and v:
+        return json.loads(v)
+    return {}
+
+
 class XUIError(Exception):
     pass
 
@@ -40,7 +49,7 @@ class XUI:
         if r.status_code == 403:
             raise XUIError(f"[{self.loc.key}] у токена мало прав (403) — нужен scope admin")
         if r.status_code == 404:
-            raise XUIError(f"[{self.loc.key}] 404 на {path} — проверь PANEL_URL (секретный путь)")
+            raise XUIError(f"[{self.loc.key}] 404 на {path} — неверный API_TOKEN или PANEL_URL (панель отвечает 404 на чужой токен)")
         try:
             data = r.json()
         except ValueError:
@@ -61,8 +70,8 @@ class XUI:
         out = []
         for iid in self.loc.inbound_ids:
             obj = (await self._ok("GET", f"/inbounds/get/{iid}"))["obj"]
-            obj["settings"] = json.loads(obj.get("settings") or "{}")
-            obj["stream"] = json.loads(obj.get("streamSettings") or "{}")
+            obj["settings"] = _as_dict(obj.get("settings"))
+            obj["stream"] = _as_dict(obj.get("streamSettings"))
             out.append(obj)
         self._inbounds, self._inbounds_ts = out, time.time()
         return out
