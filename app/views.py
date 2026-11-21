@@ -50,7 +50,25 @@ def main_kb() -> InlineKeyboardMarkup:
     return kb([("🛒 Купить / продлить", "buy")],
               [("👤 Моя подписка", "my"), ("💰 Баланс", "balance")],
               [("🎁 Промокод", "promo"), ("👥 Пригласить друга", "ref")],
-              [("📖 Как подключить", "help"), ("💬 Поддержка", f"url:https://t.me/{config.SUPPORT.lstrip('@')}")])
+              [("📖 Как подключить", "help"), ("💬 Поддержка", f"url:https://t.me/{config.SUPPORT.lstrip('@')}")],
+              *([[("📄 Документы", "docs")]] if config.PRIVACY_URL or config.TERMS_URL else []))
+
+
+def docs_kb() -> InlineKeyboardMarkup:
+    rows = []
+    if config.TERMS_URL:
+        rows.append([("📜 Пользовательское соглашение", f"url:{config.TERMS_URL}")])
+    if config.PRIVACY_URL:
+        rows.append([("🔒 Политика конфиденциальности", f"url:{config.PRIVACY_URL}")])
+    rows.append([("◀️ Меню", "menu")])
+    return kb(*rows)
+
+
+def terms_note() -> str:
+    if not config.TERMS_URL:
+        return ""
+    priv = f' и <a href="{config.PRIVACY_URL}">политикой конфиденциальности</a>' if config.PRIVACY_URL else ""
+    return f'\n\n<i>Оплачивая, ты соглашаешься с <a href="{config.TERMS_URL}">пользовательским соглашением</a>{priv}.</i>'
 
 
 def _price(p: Plan, user) -> tuple[int, int]:
@@ -128,6 +146,10 @@ async def sub_view(db: DB, xuis, uid: int) -> tuple[str, InlineKeyboardMarkup]:
         user = await db.get_user(uid)
         text += ("🔗 <b>Ссылка-подписка</b> (нажми, чтобы скопировать):\n"
                  f"<code>{config.SUB_PUBLIC_URL}/sub/{user['sub_token']}</code>")
+        backup = [(LOC_BY_KEY[k], k) for k in sub.locations if k in LOC_BY_KEY and LOC_BY_KEY[k].sub_url]
+        if backup:
+            text += "\n\n<i>Не обновляется? Запасные ссылки по странам:</i>\n" + "\n".join(
+                f"{loc.flag} <code>{loc.sub_url}/{sub_id(user['sub_token'], k)}</code>" for loc, k in backup)
     elif any(LOC_BY_KEY[k].sub_url for k in sub.locations if k in LOC_BY_KEY):
         user = await db.get_user(uid)
         parts = []

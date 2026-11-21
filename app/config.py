@@ -126,6 +126,10 @@ CRYPTOPAY_ASSETS = _env("CRYPTOPAY_ASSETS", "USDT,TON")
 DEVICE_LIMIT = int(_env("DEVICE_LIMIT", "3"))        # limitIp в 3X-UI, 0 = без лимита
 DB_PATH = _env("DB_PATH", "data/telezhka.db")
 
+# ── Документы (ссылки на telegra.ph и т.п.) ──
+PRIVACY_URL = _env("PRIVACY_URL")
+TERMS_URL = _env("TERMS_URL")
+
 # ── Баланс / рефералка ──
 REF_PERCENT = int(_env("REF_PERCENT", "10"))          # % с оплат приглашённого на баланс пригласившему
 STARS_PER_100_RUB = int(_env("STARS_PER_100_RUB", "71"))  # курс для пополнения баланса звёздами

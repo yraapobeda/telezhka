@@ -30,10 +30,11 @@ async def main():
         user.router.callback_query.middleware(gate)
     dp.include_routers(admin.router, user.router)
 
-    runner = None
+    runner = merger = None
     if config.WEB_PORT:
-        runner = await web.start(db, xuis)
-        log.info("сервер подписок на %s:%s", config.WEB_HOST, config.WEB_PORT)
+        merger = web.merger_from_config()
+        runner = await web.start(config.WEB_HOST, config.WEB_PORT, merger)
+        log.info("склейка подписок на %s:%s", config.WEB_HOST, config.WEB_PORT)
 
     for l in config.LOCATIONS:
         try:
@@ -51,6 +52,7 @@ async def main():
         task.cancel()
         if runner:
             await runner.cleanup()
+            await merger.close()
         for x in xuis.values():
             await x.close()
         if crypto:

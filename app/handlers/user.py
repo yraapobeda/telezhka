@@ -15,8 +15,8 @@ from ..config import LOCATIONS, PLANS, discounted, rub_to_stars, visible_plans
 from ..cryptopay import CryptoPay
 from ..db import DB
 from ..service import apply_promo, check_order, finalize_payment, pay_from_balance, plan_locations
-from ..views import (HELP_TEXT, balance_text, kb, loc_label, main_kb, main_text, plans_kb, plans_text,
-                     ref_text, sub_view)
+from ..views import (HELP_TEXT, balance_text, docs_kb, kb, loc_label, main_kb, main_text, plans_kb, plans_text,
+                     ref_text, sub_view, terms_note)
 
 log = logging.getLogger(__name__)
 router = Router()
@@ -73,6 +73,11 @@ async def cb_menu(c: CallbackQuery, db: DB, state: FSMContext):
     await state.clear()
     await user_of(db, c.from_user)
     await show(c, main_text(), main_kb())
+
+
+@router.callback_query(F.data == "docs")
+async def cb_docs(c: CallbackQuery):
+    await show(c, "📄 <b>Документы</b>", docs_kb())
 
 
 @router.callback_query(F.data == "help")
@@ -141,7 +146,7 @@ async def show_pay(c: CallbackQuery, db: DB, crypto: CryptoPay | None, plan_key:
             f"📦 {traffic} · {plan.days} дней\n"
             f"💵 {price}\n"
             f"💰 На балансе: {user['balance']}₽{note}\n\n"
-            f"Как платишь?")
+            f"Как платишь?{terms_note()}")
     rows = []
     if user["balance"] >= rub:
         rows.append([(f"💰 С баланса — {rub}₽", f"bal:{plan_key}:{loc}")])
@@ -309,7 +314,7 @@ def topup_method_view(rub: int, crypto_on: bool = True):
     if crypto_on:
         rows.append([(f"💎 Крипта (USDT/TON) — {rub}₽", f"tcrypto:{rub}")])
     rows.append([("◀️ Назад", "balance")])
-    return f"Пополнение на <b>{rub}₽</b>. Как платишь?", kb(*rows)
+    return f"Пополнение на <b>{rub}₽</b>. Как платишь?{terms_note()}", kb(*rows)
 
 
 @router.callback_query(F.data.startswith("top:"))
